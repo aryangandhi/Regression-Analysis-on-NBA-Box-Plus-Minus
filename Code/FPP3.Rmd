@@ -1,0 +1,598 @@
+---
+title: "Final Project Part 3"
+author: "Aryan Gandhi"
+date: "April 15, 2022"
+output: pdf_document
+---
+```{r, echo=FALSE}
+library(leaps)
+library(car)
+library(MASS)
+```
+
+
+
+```{r, echo=FALSE}
+data <- read.csv("player_data.csv")
+
+#Give a more descriptive column name
+names(data)[1] = "Rank"
+data$Pos = as.factor(data$Pos)
+
+#Remove all NA from the dataset
+data = na.omit(data)
+
+# create a 50/50 split in the data
+set.seed(1)
+train <- data[sample(1:nrow(data), 248, replace=F), ]
+test <- data[which(!(data$Rank %in% train$Rank)),]
+
+write.csv(train, "C:\\Users\\aryan\\Documents\\School\\UTM\\sta302\\Final Project\\Part 3\\training_data.csv", row.names = FALSE)
+
+write.csv(test, "C:\\Users\\aryan\\Documents\\School\\UTM\\sta302\\Final Project\\Part 3\\testing_data.csv", row.names = FALSE)
+
+train <- read.csv("training_data.csv")
+test <- read.csv("testing_data.csv")
+
+```
+
+
+#Histogram of the response
+```{r}
+hist(train$BPM, breaks=30, main="Histogram of BPM",xlab="BPM")
+```
+
+
+
+
+```{r, echo=FALSE}
+#Summarizes the train and test dataset with mean and standard deviation (only includes numerical values)
+mtr <- apply(train[,-c(1,2,3,5)], 2, mean, na.rm=TRUE)
+sdtr <- apply(train[,-c(1,2,3,5)], 2, sd, na.rm=TRUE)
+
+mtest <- apply(test[,-c(1,2,3,5)], 2,  mean, na.rm=TRUE)
+sdtest <- apply(test[,-c(1,2,3,5)], 2, sd, na.rm=TRUE)
+
+```
+
+We can take these and add them nicely to a table:
+
+Variable | mean (s.d.) in training | mean (s.d.) in test
+---------|-------------------------|--------------------
+`r names(test)[4]`| `r round(mtr[1], 3)` (`r round(sdtr[1], 3)`) | `r round(mtest[1], 3)` (`r round(sdtest[1], 3)`)
+`r names(test)[6]`| `r round(mtr[2], 3)` (`r round(sdtr[2], 3)`) | `r round(mtest[2], 3)` (`r round(sdtest[2], 3)`)
+`r names(test)[7]`| `r round(mtr[3], 3)` (`r round(sdtr[3], 3)`) | `r round(mtest[3], 3)` (`r round(sdtest[3], 3)`)
+`r names(test)[8]`| `r round(mtr[4], 3)` (`r round(sdtr[4], 3)`) | `r round(mtest[4], 3)` (`r round(sdtest[4], 3)`)
+`r names(test)[9]` | `r round(mtr[5],3)` (`r round(sdtr[5],3)`) | `r round(mtest[5],3)` (`r round(sdtest[5],3)`)
+`r names(test)[10]` | `r round(mtr[6],3)` (`r round(sdtr[6],3)`) | `r round(mtest[6],3)` (`r round(sdtest[6],3)`)
+`r names(test)[11]` | `r round(mtr[7],3)` (`r round(sdtr[7],3)`) | `r round(mtest[7],3)` (`r round(sdtest[7],3)`)
+`r names(test)[12]` | `r round(mtr[8],3)` (`r round(sdtr[8],3)`) | `r round(mtest[8],3)` (`r round(sdtest[8],3)`)
+`r names(test)[13]` | `r round(mtr[9],3)` (`r round(sdtr[9],3)`) | `r round(mtest[9],3)` (`r round(sdtest[9],3)`)
+`r names(test)[14]` | `r round(mtr[10],3)` (`r round(sdtr[10],3)`) | `r round(mtest[10],3)` (`r round(sdtest[10],3)`)
+`r names(test)[15]` | `r round(mtr[11],3)` (`r round(sdtr[11],3)`) | `r round(mtest[11],3)` (`r round(sdtest[11],3)`)
+`r names(test)[16]` | `r round(mtr[12],3)` (`r round(sdtr[12],3)`) | `r round(mtest[12],3)` (`r round(sdtest[12],3)`)
+`r names(test)[17]` | `r round(mtr[13],3)` (`r round(sdtr[13],3)`) | `r round(mtest[13],3)` (`r round(sdtest[13],3)`)
+`r names(test)[18]` | `r round(mtr[14],3)` (`r round(sdtr[14],3)`) | `r round(mtest[14],3)` (`r round(sdtest[14],3)`)
+`r names(test)[19]` | `r round(mtr[15],3)` (`r round(sdtr[15],3)`) | `r round(mtest[15],3)` (`r round(sdtest[15],3)`)
+`r names(test)[20]` | `r round(mtr[16],3)` (`r round(sdtr[16],3)`) | `r round(mtest[16],3)` (`r round(sdtest[16],3)`)
+`r names(test)[21]` | `r round(mtr[17],3)` (`r round(sdtr[17],3)`) | `r round(mtest[17],3)` (`r round(sdtest[17],3)`)
+`r names(test)[22]` | `r round(mtr[18],3)` (`r round(sdtr[18],3)`) | `r round(mtest[18],3)` (`r round(sdtest[18],3)`)
+`r names(test)[23]` | `r round(mtr[19],3)` (`r round(sdtr[19],3)`) | `r round(mtest[19],3)` (`r round(sdtest[19],3)`)
+`r names(test)[24]` | `r round(mtr[20],3)` (`r round(sdtr[20],3)`) | `r round(mtest[20],3)` (`r round(sdtest[20],3)`)
+`r names(test)[25]` | `r round(mtr[21],3)` (`r round(sdtr[21],3)`) | `r round(mtest[21],3)` (`r round(sdtest[21],3)`)
+`r names(test)[26]` | `r round(mtr[22],3)` (`r round(sdtr[22],3)`) | `r round(mtest[22],3)` (`r round(sdtest[22],3)`)
+`r names(test)[27]` | `r round(mtr[23],3)` (`r round(sdtr[23],3)`) | `r round(mtest[23],3)` (`r round(sdtest[23],3)`)
+`r names(test)[28]` | `r round(mtr[24],3)` (`r round(sdtr[24],3)`) | `r round(mtest[24],3)` (`r round(sdtest[24],3)`)
+`r names(test)[29]` | `r round(mtr[25],3)` (`r round(sdtr[25],3)`) | `r round(mtest[25],3)` (`r round(sdtest[25],3)`)
+`r names(test)[30]` | `r round(mtr[26],3)` (`r round(sdtr[26],3)`) | `r round(mtest[26],3)` (`r round(sdtest[26],3)`)
+`r names(test)[31]` | `r round(mtr[27],3)` (`r round(sdtr[27],3)`) | `r round(mtest[27],3)` (`r round(sdtest[27],3)`)
+
+Table: Summary statistics in training and test dataset
+
+```{r, echo=FALSE, results='hide'}
+
+#Model with every predictor except Rank and Player
+full <- lm(BPM ~ ., data=train[,-c(1,2)])
+summary(full)
+
+```
+We can see from the anova F-test that atleast one predictor in the model is significant to the response.
+
+
+
+#Check Condition 1 on the full model
+```{r, echo=FALSE, results='hide'}
+plot(train$BPM ~ fitted(full), main="Y vs Fitted", xlab="Fitted", ylab="BPM")
+lines(lowess(train$BPM ~ fitted(full)), lty=2)
+abline(a = 0, b = 1)
+```
+We see that there is a linear relationship between the response and fitted values.
+
+
+#Check Condition 2 on the full model
+```{r,echo=FALSE, results='hide'}
+checked = c()
+not_numeric = c(1,2,3,5)
+
+par(mfrow=c(3,3))
+for(i in 8:ncol(train)){
+  for(j in 8:ncol(train)){
+    if(j != i){
+      if(!(j %in% checked) && !(i %in% not_numeric) && !(j %in% not_numeric)){
+        plot(train[,i],train[,j], xlab=names(train)[i], ylab=names(train)[j])
+      }
+    }
+  }
+  checked = append(checked, i)
+}
+```
+We see from these plots that while there are some concerning patterns (some curve patterns) for the most part condition 2 is satifised.
+
+
+
+Since both condition 1 & 2 are satisfied we can interpret the residual plots correctly.
+
+
+#Check Assumptions for full model
+```{r, echo=FALSE, results='hide'}
+#temp_full only includes numeric values as the vif function does not like non-numeric variables
+temp_full <- lm(BPM ~ ., data=train[,-c(1,2,3,5)])
+summary(temp_full)
+
+# check model assumptions
+plot(rstandard(temp_full)~fitted(temp_full), xlab="fitted", ylab="Residuals")
+par(mfrow=c(3,3))
+for(i in c(4:30)){
+  plot(rstandard(full)~train[,i], xlab=names(train)[i], ylab="Residuals")
+}
+qqnorm(rstandard(full))
+qqline(rstandard(full))
+
+```
+
+
+We see from the residual plots that all assumptions are satisfied. We see slight concerns of uncorrelated errors assumption violation in the X3P. (three point percentage), FT. (free throw percentage), STL (steals per game), BLK (blocks per game) residual plots, however, this is expected due to the nature of the variables themselves. Given that basketball is a team sport we should expected to some form of uncorrelated errors assumption violation as players on the same team impact each other's performance. Furthermore, while there is slight deviation on the tails of the QQplot, for the most part normaility assumption is satisified.
+
+
+#Check for Multicolinearity
+```{r, echo=FALSE, results='hide'}
+vif(temp_full)
+```
+
+
+```{r, echo=FALSE, results='hide'}
+#Create a model with reduced multicolinearity
+red_mc = train[,-c(1, 2, 9:13, 15, 16, 19, 20, 24)]
+full2 = lm(BPM ~ ., data=red_mc)
+
+
+#temp_data only includes numeric values as the vif function does not like non-numeric variables
+temp_data = train[,-c(1:3, 5, 9:13, 15, 16, 19, 20, 24)]
+temp_full2 = lm(BPM ~ ., data=temp_data)
+summary(temp_full2)
+```
+
+
+```{r, echo=FALSE, results='hide'}
+vif(temp_full2)
+```
+
+To try to account for multicolinearity I removed predictors that have high VIF values and can be mostly summarized by other predictors. For example, X3P. (three point percentage) summarizes X3P (three pointers made) and X3PA (three pointer attempts), while I feel that taking X3PA into account along with the X3P. is crucial, by removing those predictors we get significantly less mulicolinearity in our model. Similar reasoning was used to justify removing FG (field goals made), FGA (field goal attempts), FG. (field goal percentage), FT (free throws made), FTA (free throw attempts). TRB (total rebounds) was removed as TRB = ORB (offensive rebound) + DRB (defensive rebound), therefore TRB can be removed to reduce multicolinearity while not losing any additional information. Furthermore, eFG. (effective field goal percentage) is the number of shots made divided by the number of shot attempts, however X2P have a weight of 1 and X3P have weight of 1.5. Therefore, eFG. summarizes FG. (field goal percentage) and gives back some information that was lost when removing X3P and X3PA. While there are some predictors that still have concerning VIF values to worry about such as MP, AST, TOV, and PTS. all these predictors should be highly related to the response and reflect a player's impact on team success.
+
+
+
+#Check Condition 1 for model with less multicolinearity 
+```{r, echo=FALSE, results='hide'}
+plot(train$BPM ~ fitted(full2), main="Y vs Fitted", xlab="Fitted", ylab="BPM")
+lines(lowess(train$BPM ~ fitted(full2)), lty=2)
+abline(a = 0, b = 1)
+```
+The response and the fitted values of the model with reduced multicolinearity clearly have a linear relationship, therefore condition 1 holds. 
+
+
+
+#Check Condition 2 for model with less multicolinearity
+```{r, echo=FALSE, results='hide'}
+checked = c()
+
+not_numeric = c(1,2,3,5)
+
+par(mfrow=c(3,3))
+# check conditions for checking model assumptions
+for(i in 1:ncol(red_mc)){
+  for(j in 1:ncol(red_mc)){
+    if(j != i){
+      if(!(j %in% checked) && !(i %in% not_numeric) && !(j %in% not_numeric)){
+        plot(red_mc[,i], red_mc[,j], xlab=names(red_mc)[i], ylab=names(red_mc)[j])
+      }
+    }
+  }
+  checked = append(checked, i)
+}
+```
+
+
+When looking at the pair plots while there are some concerning patterns such as slight curves, it is not a strong indication that condition 2 is violated. Therefore, condition 2 holds.
+
+
+#Check Assumptions for model with reduced multicolinearity
+```{r, echo=FALSE, results='hide'}
+# check model assumptions
+plot(rstandard(full2)~fitted(full2), xlab="fitted", ylab="Residuals")
+par(mfrow=c(2,2))
+for(i in c(1:ncol(red_mc))){
+  plot(rstandard(full2)~red_mc[,i], xlab=names(red_mc)[i], ylab="Residuals")
+}
+qqnorm(rstandard(full2))
+qqline(rstandard(full2))
+```
+
+
+From looking at the residual plots all conditions seem to hold. There are slight fanning patterns but nothing too significant enough to suggest that non-constant variance was violated. While there are some band patterns in some of the residual plots, it does not imply that uncorrelated errors assumption is violated as some of the predictors are inherently discrete numerical values. While there is some deviation in the tails of the QQplot for the most part normality assumption holds. Note the residual plots for the Pos and Tm predictors should be ignored as both are categorical variables.
+
+
+#Try all subsets method to see what model we get
+```{r, echo=FALSE, results='hide'}
+# using all predictors
+#In order to reduce number of possible subsets I will not include indicator variables
+n = ncol(red_mc)
+best <- regsubsets(BPM ~ ., data=red_mc[,-c(1,3)], nbest=1, nvmax=n, really.big = TRUE)
+summary(best)
+# subsets(best, statistic = "adjr2")
+```
+
+From the all possible subset method we see that eFG. seems to be very signicificant to the response. Futhermore, after about subset size 8 or 9 the difference in adjusted R-squared becomes very small suggesting that we may want to pick a model that has around 8-10 predictors.
+
+#Compared best models with 8-10 predictors
+```{r, echo=FALSE, results='hide'}
+#Pos & Tm are included in each model along with the information from summary(best)
+mod1 = lm(BPM ~ MP + eFG. + DRB + AST + STL + BLK + TOV + PTS + Pos + Tm, data=red_mc)
+mod2 = lm(BPM ~ MP + eFG. + FT. + DRB + AST + STL + BLK + TOV + PTS + Pos + Tm, data=red_mc)
+mod3 = lm(BPM ~ MP + eFG. + FT. + DRB + AST + STL + BLK + TOV + PF + PTS + Pos + Tm, data=red_mc)
+mod4 = lm(BPM ~ MP + eFG. + FT. + DRB + AST + STL + BLK + TOV + PF + PTS + Age + Pos + Tm, data=red_mc)
+
+#Create temporary model so vif function works
+temp_mod1 = lm(BPM ~ MP + eFG. + DRB + AST + STL + BLK + TOV + PTS, data=red_mc)
+temp_mod2 = lm(BPM ~ MP + eFG. + FT. + DRB + AST + STL + BLK + TOV + PTS, data=red_mc)
+temp_mod3 = lm(BPM ~ MP + eFG. + FT. + DRB + AST + STL + BLK + TOV + PF + PTS, data=red_mc)
+temp_mod4 = lm(BPM ~ MP + eFG. + FT. + DRB + AST + STL + BLK + TOV + PF + PTS + Age, data=red_mc)
+
+# check adjusted R^2 for mod1-3
+summary(mod1)$adj.r.squared
+summary(mod2)$adj.r.squared
+summary(mod3)$adj.r.squared
+summary(mod4)$adj.r.squared
+```
+
+The model with 10 predictors has a larger R-squared value than models with 8 or 9 predictors and has only a slightly smaller R-squared value than the model with 11 predictors. Therefore, the all possible subsets method suggests that the 10 predictor model is the best.
+
+#Check Condition 1 for best model with 10 predictors 
+```{r, echo=FALSE, results='hide'}
+plot(red_mc$BPM ~ fitted(mod3), main="Y vs Fitted", xlab="Fitted", ylab="BPM")
+lines(lowess(red_mc$BPM ~ fitted(mod3)), lty=2)
+abline(a = 0, b = 1)
+```
+Since the fitted values and the respons have a linear relationship condition 1 is satisified.
+
+
+#Check Condition 2 for best model with 10 predictors
+```{r, echo=FALSE, results='hide'}
+red_mc.mod3 = red_mc[,c(1,3,6,9,10,12,13,14,15,16,17,18,19)]
+checked = c()
+not_numeric = c(1,2)
+
+par(mfrow=c(3,3))
+# check conditions for checking model assumptions
+for(i in 1:ncol(red_mc.mod3)){
+  for(j in 1:ncol(red_mc.mod3)){
+    if(j != i){
+      if(!(j %in% checked) && !(i %in% not_numeric) && !(j %in% not_numeric)){
+        plot(red_mc.mod3[,i], red_mc.mod3[,j], xlab=names(red_mc.mod3)[i], ylab=names(red_mc.mod3)[j])
+      }
+    }
+  }
+  checked = append(checked, i)
+}
+```
+
+Based on the pair plot results we can see that there no non-linear systematic patterns to worry about. Therefore, condition 2 is satisfied.
+
+
+#Check Assumptions for best model with 10 predictors
+```{r, echo=FALSE, results='hide'}
+plot(rstandard(mod3)~fitted(mod3), xlab="fitted", ylab="Residuals")
+par(mfrow=c(2,2))
+for(i in c(1:ncol(red_mc.mod3))){
+  plot(rstandard(mod3)~red_mc.mod3[,i], xlab=names(red_mc.mod3)[i], ylab="Residuals")
+}
+qqnorm(rstandard(mod3))
+qqline(rstandard(mod3))
+```
+
+Based on the residual plots all assumptions seem to be satisfied. While there is a slight normality violation based on the deviations on the tails of the QQplot it is nothing too alarming.
+
+
+
+
+#Build a model using stepwise selection using AIC
+```{r, echo=FALSE, results='hide'}
+stepAIC(lm(BPM ~ ., data=red_mc), direction="both", k=2)
+
+```
+
+
+#Build a model using stepwise selection but using BIC and compare with the model using AIC
+```{r, echo=FALSE, results='hide'}
+stepAIC(lm(BPM ~ ., data=red_mc), direction="both", k=log(n))
+```
+The result models from using the stepwise selection method with the AIC vs BIC penalty are very similar, however, the model using AIC for penalty includes Tm (team) as one of the predictors. 
+
+
+#Compare models using AIC vs BIC as penalty term.
+```{r, echo=FALSE,results='hide'}
+modAIC = lm(BPM ~ Age + Tm + G + GS + MP + eFG. + FT. + ORB + DRB + AST + STL + BLK + TOV + PF + PTS, data = red_mc)
+
+modBIC = lm(BPM ~ Age + G + GS + MP + eFG. + FT. + ORB + DRB + AST + STL + BLK + TOV + PF + PTS, data = red_mc)
+
+summary(modAIC)$adj.r.squared
+summary(modBIC)$adj.r.squared
+
+```
+
+When comparing the adjusted R-squared values of both we can see that the model using the AIC penalty has a much higher adjusted R-squared value suggesting that the Tm predictor should be included in the model. 
+
+
+#Check Condition 1 for model using AIC as penalty 
+```{r, echo=FALSE, results='hide'}
+plot(red_mc$BPM ~ fitted(modAIC), main="Y vs Fitted", xlab="Fitted", ylab="BPM")
+lines(lowess(red_mc$BPM ~ fitted(modAIC)), lty=2)
+abline(a = 0, b = 1)
+```
+Condition 1 is satisfied.
+
+
+
+#Check Condition 2 for model using AIC as penalty
+```{r, echo=FALSE, results='hide'}
+red_mc.modAIC = red_mc[,c(2,3,4,5,6,9:19)]
+checked = c()
+not_numeric = c(2)
+
+par(mfrow=c(3,3))
+# check conditions for checking model assumptions
+for(i in 1:ncol(red_mc.modAIC)){
+  for(j in 1:ncol(red_mc.modAIC)){
+    if(j != i){
+      if(!(j %in% checked) && !(i %in% not_numeric) && !(j %in% not_numeric)){
+        plot(red_mc.modAIC[,i], red_mc.modAIC[,j], xlab=names(red_mc.modAIC)[i], ylab=names(red_mc.modAIC)[j])
+      }
+    }
+  }
+  checked = append(checked, i)
+}
+```
+Condition 2 is satisfied
+
+
+#Check Assumptions for model using AIC as penalty
+```{r, echo=FALSE, results='hide'}
+plot(rstandard(modAIC)~fitted(modAIC), xlab="fitted", ylab="Residuals")
+par(mfrow=c(2,2))
+for(i in c(1:ncol(red_mc.modAIC))){
+  plot(rstandard(modAIC)~red_mc.modAIC[,i], xlab=names(red_mc.modAIC)[i], ylab="Residuals")
+}
+qqnorm(rstandard(modAIC))
+qqline(rstandard(modAIC))
+```
+
+As we can see all conditions are satified.
+
+
+Therefore we now choosing between the model with 10 predictors using the all subsets method (mod3) and the model using the AIC penalty from the stepwise selection method (modAIC). We can do this by testing both models on the test dataset.
+
+
+For each of these, let's fit them in our test dataset, and then build a table to summarize the differences between the training models and test models. We will include in our table: **VIF information, number of influential points by Cooks and DFFITS, whether assumptions hold, and summaries of the coefficients.** More information could be added such as number of leverage points and leverage.
+
+
+\newpage
+
+```{r, echo=FALSE}
+# Summary of mod3 in training set
+p1 <- length(coef(mod3))-1
+n1 <- nrow(train)
+vif1 <- max(vif(mod3))
+D1 <- length(which(cooks.distance(mod3) > qf(0.5, p1+1, n1-p1-1)))
+fits1 <- length(which(abs(dffits(mod3)) > 2*sqrt((p1+1)/n1)))
+Hcut1 <- 2*((p1+1)/n1)
+leverage1 = length(which(hatvalues(mod3) > Hcut1))
+r1 <- rstandard(mod3)
+outliers1 = length(which(r1 < -4 | r1 > 4))
+adjR1 = summary(mod3)$adj.r.squared
+
+coefs1 <- round(summary(mod3)$coefficients[,1], 3)
+ses1 <- 2*round(summary(mod3)$coefficients[,2], 3)
+
+
+
+# fit mod3 in test dataset
+mod3.test <- lm(BPM ~ MP + eFG. + FT. + DRB + AST + STL + BLK + TOV + PF + PTS + Pos + Tm, data=test)
+
+# Summary of mod3 in test set
+tp1 <- length(coef(mod3.test))-1
+tn1 <- nrow(test)
+tvif1 <- max(vif(mod3.test))
+tD1 <- length(which(cooks.distance(mod3.test) > qf(0.5, tp1 + 1, tn1 - tp1 - 1)))
+tfits1 <- length(which(abs(dffits(mod3.test)) > 2*sqrt((tp1 + 1)/tn1)))
+tHcut1 <- 2*((tp1+1)/tn1)
+tleverage1 = length(which(hatvalues(mod3.test) > tHcut1))
+tr1 <- rstandard(mod3.test)
+toutliers1 = length(which(tr1 < -4 | tr1 > 4))
+tadjR1 = summary(mod3.test)$adj.r.squared
+
+tcoefs1 <- round(summary(mod3.test)$coefficients[,1], 3)
+tses1 <- 2*round(summary(mod3.test)$coefficients[,2], 3)
+
+
+
+# Summary of modAIC in training set
+p2 <- length(coef(modAIC))-1
+n2 <- nrow(train)
+vif2 <- max(vif(modAIC))
+D2 <- length(which(cooks.distance(modAIC) > qf(0.5, p2 + 1, n2 - p2 - 1)))
+fits2 <- length(which(abs(dffits(modAIC)) > 2*sqrt((p2 + 1)/n2)))
+Hcut2 <- 2*((p2+1)/n2)
+leverage2 = length(which(hatvalues(modAIC) > Hcut2))
+r2 <- rstandard(modAIC)
+outliers2 = length(which(r2 < -4 | r2 > 4))
+adjR2 = summary(modAIC)$adj.r.squared
+
+coefs2 <- round(summary(modAIC)$coefficients[,1], 3)
+ses2 <- 2*round(summary(modAIC)$coefficients[,2], 3)
+
+
+
+# fit modAIC in test set
+modAIC.test <- lm(BPM ~ Age + Tm + G + GS + MP + eFG. + FT. + ORB + DRB + AST + STL + BLK + TOV + PF + PTS, data = test)
+
+# Summary of modAIC in test set
+tp2 <- length(coef(modAIC.test))-1
+tn2 <- nrow(test)
+tvif2 <- max(vif(modAIC.test))
+tD2 <- length(which(cooks.distance(modAIC.test) > qf(0.5, tp2 + 1, tn2 - tp2 - 1)))
+tfits2 <- length(which(abs(dffits(modAIC.test)) > 2*sqrt((tp2 + 1)/tn2)))
+tHcut2 <- 2*((tp2+1)/tn2)
+tleverage2 = length(which(hatvalues(modAIC.test) > tHcut2))
+tr2 <- rstandard(modAIC.test)
+toutliers2 = length(which(tr2 < -4 | tr2 > 4))
+tadjR2 = summary(modAIC.test)$adj.r.squared
+
+tcoefs2 <- round(summary(modAIC.test)$coefficients[,1], 3)
+tses2 <- 2*round(summary(modAIC.test)$coefficients[,2], 3)
+
+
+```
+
+
+Characteristic | Model 1 (Train) | Model 1 (Test) | Model 2 (Train) | Model 2 (Test)
+---------------|----------------|---------------|-----------------|---------------
+Adjusted R-Sq | `r adjR1` | `r tadjR1` | `r adjR2` | `r tadjR2`
+\# Leverage | `r leverage1` | `r tleverage1` | `r leverage2` | `r tleverage2`
+\# Outliers | `r outliers1` | `r toutliers1` | `r outliers2` | `r toutliers2`
+\# Cook's D | `r D1` | `r tD1` | `r D2` | `r tD2`
+\# DFFITS | `r fits1` | `r tfits1` | `r fits2` | `r tfits2`
+Violations | slight normality | slight normality | slight normality | slight normality
+---------------|----------------|---------------|-----------------|---------------
+Intercept | `r coefs1[1]` $\pm$ `r ses1[1]` | `r tcoefs1[1]` $\pm$ `r tses1[1]` |`r coefs2[1]` $\pm$ `r ses2[1]`  | `r tcoefs2[1]` $\pm$ `r tses2[1]`
+Age  | - | - | `r coefs2[2]` $\pm$ `r ses2[2]` | `r tcoefs2[2]` $\pm$ `r tses2[2]`
+G  | - | - | `r coefs2[33]` $\pm$ `r ses2[33]` | `r tcoefs2[33]` $\pm$ `r tses2[33]`
+GS  | - | - | `r coefs2[34]` $\pm$ `r ses2[34]` | `r tcoefs2[34]` $\pm$ `r tses2[34]`
+MP  | `r coefs1[2]` $\pm$ `r ses1[2]` | `r tcoefs1[2]` $\pm$ `r tses1[2]` | `r coefs2[35]` $\pm$ `r ses2[35]`  | `r tcoefs2[35]` $\pm$ `r tses2[35]` 
+eFG. | `r coefs1[3]` $\pm$ `r ses1[3]` | `r tcoefs1[3]` $\pm$ `r tses1[3]` | `r coefs2[36]` $\pm$ `r ses2[36]`   | `r tcoefs2[36]` $\pm$ `r tses2[36]`
+FT.  | `r coefs1[4]` $\pm$ `r ses1[4]` | `r tcoefs1[4]` $\pm$ `r tses1[4]` | `r coefs2[37]` $\pm$ `r ses2[37]`  | `r tcoefs2[37]` $\pm$ `r tses2[37]`
+ORB  | - | - | `r coefs2[38]` $\pm$ `r ses2[38]`   | `r tcoefs2[38]` $\pm$ `r tses2[38]`
+DRB  | `r coefs1[5]` $\pm$ `r ses1[5]` | `r tcoefs1[5]` $\pm$ `r tses1[5]` | `r coefs2[39]` $\pm$ `r ses2[39]`   | `r tcoefs2[39]` $\pm$ `r tses2[39]`
+AST  | `r coefs1[6]` $\pm$ `r ses1[6]` | `r tcoefs1[6]` $\pm$ `r tses1[6]` | `r coefs2[40]` $\pm$ `r ses2[40]`   | `r tcoefs2[40]` $\pm$ `r tses2[40]`
+STL | `r coefs1[7]` $\pm$ `r ses1[7]` | `r tcoefs1[7]` $\pm$ `r tses1[7]` | `r coefs2[41]` $\pm$ `r ses2[41]`   | `r tcoefs2[41]` $\pm$ `r tses2[41]`
+BLK  | `r coefs1[8]` $\pm$ `r ses1[8]` | `r tcoefs1[8]` $\pm$ `r tses1[8]` | `r coefs2[42]` $\pm$ `r ses2[42]`   | `r tcoefs2[42]` $\pm$ `r tses2[42]`
+TOV  | `r coefs1[9]` $\pm$ `r ses1[9]` | `r tcoefs1[9]` $\pm$ `r tses1[9]` | `r coefs2[43]` $\pm$ `r ses2[43]`   | `r tcoefs2[43]` $\pm$ `r tses2[43]`
+PF  | `r coefs1[10]` $\pm$ `r ses1[10]` | `r tcoefs1[10]` $\pm$ `r tses1[10]` | `r coefs2[44]` $\pm$ `r ses2[44]`   | `r tcoefs2[44]` $\pm$ `r tses2[44]`
+PTS | `r coefs1[11]` $\pm$ `r ses1[11]` | `r tcoefs1[11]` $\pm$ `r tses1[11]` | `r coefs2[45]` $\pm$ `r ses2[45]`   | `r tcoefs2[45]` $\pm$ `r tses2[45]`
+
+ \newpage 
+ 
+#Check Condition 1 for mod3 in the test dataset
+```{r, echo=FALSE, results='hide'}
+plot(test$BPM ~ fitted(mod3.test), main="Y vs Fitted", xlab="Fitted", ylab="BPM")
+lines(lowess(test$BPM ~ fitted(mod3.test)), lty=2)
+abline(a = 0, b = 1)
+```
+
+Condition 1 is satisfied.
+
+
+#Check Condition 2 for mod3 in test dataset
+```{r, echo=FALSE,results='hide'}
+red_mc.mod3.test = test[,c(3,5,8,18, 21, 23, 25, 26, 27, 28, 29, 30, 31)]
+checked = c()
+not_numeric = c(1,2)
+
+par(mfrow=c(3,3))
+# check conditions for checking model assumptions
+for(i in 1:ncol(red_mc.mod3.test)){
+  for(j in 1:ncol(red_mc.mod3.test)){
+    if(j != i){
+      if(!(j %in% checked) && !(i %in% not_numeric) && !(j %in% not_numeric)){
+        plot(red_mc.mod3.test[,i], red_mc.mod3.test[,j], xlab=names(red_mc.mod3.test)[i], ylab=names(red_mc.mod3.test)[j])
+      }
+    }
+  }
+  checked = append(checked, i)
+}
+```
+
+While we do see some curve patterns that are concerning such as the pair plot of MP and TOV as well as MP and AST, for the most part condition 2 is satisfied. However, these patterns may make the residual plots unreliable
+
+
+
+
+#Check Assumptions for mod3 in the test dataset
+```{r, echo=FALSE, results='hide'}
+plot(rstandard(mod3.test)~fitted(mod3.test), xlab="fitted", ylab="Residuals")
+par(mfrow=c(2,2))
+for(i in c(1:ncol(red_mc.mod3.test))){
+  plot(rstandard(mod3.test)~red_mc.mod3.test[,i], xlab=names(red_mc.mod3.test)[i], ylab="Residuals")
+}
+qqnorm(rstandard(mod3.test))
+qqline(rstandard(mod3.test))
+```
+
+
+From checking the residual plots there does not seem to be any patterns that suggest that any conditions were violated. As for the QQplot while there does seem to be deviation on the tails of the plot for the most part the normality assumption seems to hold.
+
+
+#Check Condition 1 for modAIC in the test dataset
+```{r, echo=FALSE, results='hide'}
+plot(test$BPM ~ fitted(modAIC.test), main="Y vs Fitted", xlab="Fitted", ylab="BPM")
+lines(lowess(test$BPM ~ fitted(modAIC.test)), lty=2)
+abline(a = 0, b = 1)
+```
+
+
+```{r, echo=FALSE, results='hide'}
+#Check Condition 2 for mod3 in test dataset
+red_mc.modAIC.test = test[,c(4,5,6,7,8,18,21,22,23,25,26,27,28,29,30,31)]
+checked = c()
+not_numeric = c(2)
+
+par(mfrow=c(3,3))
+# check conditions for checking model assumptions
+for(i in 1:ncol(red_mc.modAIC.test)){
+  for(j in 1:ncol(red_mc.modAIC.test)){
+    if(j != i){
+      if(!(j %in% checked) && !(i %in% not_numeric) && !(j %in% not_numeric)){
+        plot(red_mc.modAIC.test[,i], red_mc.modAIC.test[,j], xlab=names(red_mc.modAIC.test)[i], ylab=names(red_mc.modAIC.test)[j])
+      }
+    }
+  }
+  checked = append(checked, i)
+}
+```
+
+While there does seem to be some curve patterns such as the pair plot between TOV and MP, for the most part condition 2 seems to be satisfied. How these patterns may make the residual plots unreliable.
+
+
+
+#Check Assumptions for mod3 in the test dataset
+```{r, echo=FALSE, results='hide'}
+plot(rstandard(modAIC.test)~fitted(modAIC.test), xlab="fitted", ylab="Residuals")
+par(mfrow=c(2,2))
+for(i in c(1:ncol(red_mc.modAIC.test))){
+  plot(rstandard(modAIC.test)~red_mc.modAIC.test[,i], xlab=names(red_mc.modAIC.test)[i], ylab="Residuals")
+}
+qqnorm(rstandard(modAIC.test))
+qqline(rstandard(modAIC.test))
+
+```
+
+
+No assumptions seem to be violated.
